@@ -1,0 +1,29 @@
+[
+  {
+    "id": "DEP-001",
+    "service": "payment-service",
+    "from_version": "v3.8",
+    "to_version": "v3.9",
+    "strategy": "direct",
+    "outcome": "failed",
+    "incident_id": "INC-001"
+  },
+  {
+    "id": "DEP-002",
+    "service": "payment-service",
+    "from_version": "v3.9",
+    "to_version": "v4.0",
+    "strategy": "canary",
+    "outcome": "success",
+    "incident_id": null
+  },
+  {
+    "id": "DEP-003",
+    "service": "order-service",
+    "from_version": "v2.1",
+    "to_version": "v2.2",
+    "strategy": "blue-green",
+    "outcome": "success",
+    "incident_id": null
+  }
+]

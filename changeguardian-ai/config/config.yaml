@@ -1,0 +1,87 @@
+# ============================================================
+# ChangeGuardian AI — Configuration
+#
+# Use ${VAR_NAME} to reference environment variables.
+# Set actual values in your .env file (see .env.example).
+# ============================================================
+
+# ------------------------------------------------------------
+# LLM settings
+# ------------------------------------------------------------
+llm:
+  provider: "openai"            # openai | qwen (any OpenAI-compatible endpoint)
+  model: "${LLM_MODEL}"         # e.g. gpt-4o-mini, qwen2.5-72b-instruct
+  api_key: "${OPENAI_API_KEY}"
+  base_url: "${OPENAI_BASE_URL}" # leave blank for OpenAI; set for Qwen / other providers
+  temperature: 0.2
+
+# ------------------------------------------------------------
+# Neo4j graph database
+# ------------------------------------------------------------
+neo4j:
+  uri: "${NEO4J_URI}"
+  user: "${NEO4J_USER}"
+  password: "${NEO4J_PASSWORD}"
+  seed_demo_data: true           # seed demo services + incidents on startup
+
+# ------------------------------------------------------------
+# Vector store (for semantic document retrieval)
+# Change type from "faiss" → "pinecone" and re-run ingest.py
+# ------------------------------------------------------------
+vector_store:
+  type: "faiss"                  # faiss (local, free) | pinecone (cloud)
+  faiss:
+    persist_directory: "data/vector_store"
+  pinecone:
+    api_key: "${PINECONE_API_KEY}"
+    index_name: "${PINECONE_INDEX_NAME}"
+
+# ------------------------------------------------------------
+# Orchestration engine
+# ------------------------------------------------------------
+orchestration:
+  mode: "langgraph"              # langgraph (stateful graph) | sequential
+
+# ------------------------------------------------------------
+# Guardrails
+# Tune thresholds here — no code changes needed.
+# ------------------------------------------------------------
+guardrails:
+  input:
+    enabled: true
+    block_empty: true
+    block_pii: true
+    block_injection: true
+    max_length: 2000
+  output:
+    enabled: true
+    min_risk_score: 0
+    max_risk_score: 100
+
+# ------------------------------------------------------------
+# FastAPI server
+# ------------------------------------------------------------
+api:
+  host: "0.0.0.0"
+  port: 8000
+  cors_origins: "${CORS_ORIGINS}"
+
+# ------------------------------------------------------------
+# Document ingestion (ingest.py)
+# ------------------------------------------------------------
+documents:
+  path: "data/documents"
+  chunk_size: 500
+  chunk_overlap: 50
+  supported_extensions:
+    - ".txt"
+    - ".pdf"
+    - ".md"
+    - ".json"
+    - ".csv"
+
+# ------------------------------------------------------------
+# Logging
+# ------------------------------------------------------------
+logging:
+  level: "${LOG_LEVEL}"          # DEBUG | INFO | WARNING | ERROR

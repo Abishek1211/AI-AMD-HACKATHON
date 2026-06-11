@@ -1,0 +1,41 @@
+# ============================================================
+# ChangeGuardian AI — Routing Rules
+#
+# Maps a detected change intent to an agent_name.
+# The router LLM reads these descriptions to classify the
+# incoming change request.
+#
+# To add a new route:
+#   1. Add an entry below (intent, description, agent_name)
+#   2. Create a matching agent in agents/ with the same agent_name
+#   3. Run: python verify_setup.py
+# ============================================================
+
+routes:
+  - intent: "service_upgrade"
+    description: "User wants to upgrade a service or application to a newer version."
+    agent_name: "risk_assessment_agent"
+
+  - intent: "schema_change"
+    description: "User wants to modify a database schema, run a migration, or alter a table."
+    agent_name: "risk_assessment_agent"
+
+  - intent: "config_change"
+    description: "User wants to change configuration, environment variables, or feature flags."
+    agent_name: "risk_assessment_agent"
+
+  - intent: "dependency_update"
+    description: "User wants to update a library, package, or third-party dependency."
+    agent_name: "risk_assessment_agent"
+
+  - intent: "infrastructure_change"
+    description: "User wants to change infrastructure: scaling, networking, cloud resources, or Kubernetes."
+    agent_name: "risk_assessment_agent"
+
+  - intent: "rollout_query"
+    description: "User is asking specifically about deployment strategy or rollout options for an existing plan."
+    agent_name: "rollout_agent"
+
+  - intent: "general_change"
+    description: "Any other type of deployment or system change request not covered above."
+    agent_name: "risk_assessment_agent"

@@ -1,0 +1,10 @@
+fastapi<1.0.0
+uvicorn<1.0.0
+pydantic<3.0.0
+langgraph<2.0.0
+openai<2.0.0
+neo4j<6.0.0
+python-dotenv<2.0.0
+pyyaml<7.0.0
+pytest<9.0.0
+pytest-asyncio<1.0.0

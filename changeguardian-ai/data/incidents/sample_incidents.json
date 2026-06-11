@@ -1,0 +1,23 @@
+[
+  {
+    "id": "INC-001",
+    "title": "Payment timeout spike",
+    "severity": "HIGH",
+    "root_cause": "payment-service v3.9 memory leak under sustained load",
+    "impacted_services": ["payment-service", "order-service"]
+  },
+  {
+    "id": "INC-002",
+    "title": "Order cascade failure",
+    "severity": "CRITICAL",
+    "root_cause": "payment-service outage propagated to order-service via synchronous calls",
+    "impacted_services": ["order-service", "payment-service", "notification-service"]
+  },
+  {
+    "id": "INC-003",
+    "title": "Redis cache stampede",
+    "severity": "MEDIUM",
+    "root_cause": "Cold start after redis-cache restart caused thundering herd on payment-service",
+    "impacted_services": ["payment-service", "redis-cache"]
+  }
+]
