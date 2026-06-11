@@ -29,8 +29,3 @@ export async function analyzeChange(changeRequest: string): Promise<AnalyzeChang
   return res.json();
 }
 
-export async function getRecentDecisions(limit = 10) {
-  const res = await fetch(`${BASE_URL}/api/memory/recent?limit=${limit}`);
-  if (!res.ok) throw new Error("Failed to fetch recent decisions");
-  return res.json();
-}

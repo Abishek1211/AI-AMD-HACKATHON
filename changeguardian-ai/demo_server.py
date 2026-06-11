@@ -44,15 +44,6 @@ INCIDENTS: list[dict] = json.loads(_p.read_text()) if _p.exists() else [
      "root_cause": "Cold start thundering herd",            "impacted_services": ["payment-service", "redis-cache"]},
 ]
 
-# Strategies description map (used in the response to the frontend)
-STRATEGY_DESC = {
-    "direct":         "Deploy to all instances immediately. Low-risk only.",
-    "canary":         "Route small traffic % first, then expand gradually.",
-    "blue-green":     "Switch between two identical environments instantly.",
-    "feature-flag":   "Deploy behind a flag; enable per user segment.",
-    "staged-rollout": "Progress through regions with automated health gates.",
-}
-
 # ---------------------------------------------------------------------------
 # Single-call prompt  — everything in one LLM call for speed
 # ---------------------------------------------------------------------------
