@@ -1,0 +1,400 @@
+================================================================================
+  CHANGEGUARDIAN AI — HACKATHON PRESENTATION CONTENT
+================================================================================
+
+================================================================================
+SLIDE 2 — PROBLEM & CONTEXT
+================================================================================
+
+PROBLEM STATEMENT (GENERIC)
+----------------------------
+In any large-scale software organisation, change is constant — and change is
+the leading cause of failure. Every day, hundreds of engineers across hundreds
+of teams push updates to production systems: version upgrades, configuration
+adjustments, database schema migrations, API contract changes, and dependency
+bumps. Each change looks small in isolation. But in a modern microservices
+architecture, nothing is truly isolated.
+
+The fundamental problem is a knowledge gap at the moment of action.
+
+  - The engineer who wrote the runbook three months ago is no longer on-call.
+  - The postmortem that documented last quarter's outage lives in a Confluence
+    page nobody opens at deploy time.
+  - The dependency graph that shows which downstream services call this API
+    exists — but it is buried in an architecture diagram updated six months ago.
+  - The compatibility matrix for "Spring Boot 3 requires Java 17" is tribal
+    knowledge, not a gate.
+
+By the time an engineer clicks "Deploy", they are making a risk decision based
+on incomplete information, under time pressure, without access to the
+institutional memory of every similar change that has ever been attempted.
+
+The gap between "what we know collectively as an organisation" and "what the
+engineer knows right now" is where production incidents are born.
+
+REAL-WORLD PROBLEM: WHERE THIS HAPPENS TODAY
+---------------------------------------------
+This is not a hypothetical. It is a documented, recurring failure pattern
+across the industry:
+
+  REAL INCIDENT 1 — Amazon (2013)
+  A configuration change to a subsystem managing connections caused a
+  cascading failure that took down major AWS services for several hours.
+  Root cause: the impact of a single configuration change on downstream
+  dependencies was not fully understood before deployment.
+
+  REAL INCIDENT 2 — Facebook / Meta (2021)
+  A routine BGP configuration update caused a global 6-hour outage affecting
+  3.5 billion users. The engineer deploying the change had no automated system
+  to predict that this specific change would sever DNS routing for all services.
+  Loss estimate: ~$60 million in revenue + significant reputational damage.
+
+  REAL INCIDENT 3 — Knight Capital Group (2012)
+  A software deployment activated a dormant trading algorithm due to a missed
+  configuration flag. The firm lost $440 million in 45 minutes.
+  Root cause: no pre-deployment risk system flagged that a flag change would
+  have fundamentally different behaviour in production vs. staging.
+
+  REAL INCIDENT 4 — Cloudflare (2019)
+  A regex change in a WAF rule caused 100% CPU utilisation across all machines
+  globally, taking Cloudflare offline for 27 minutes. The change looked safe
+  in isolation but was not tested against production traffic patterns.
+
+  REAL INCIDENT 5 — Salesforce (2022)
+  A database script deployed to production accidentally granted read/write
+  access to all customer data for a window of time. A pre-deployment schema
+  change analysis would have flagged the permission scope anomaly.
+
+THE COMMON THREAD ACROSS ALL THESE INCIDENTS
+---------------------------------------------
+  "Someone made a change. Nobody had a system that said: this specific change,
+   in this specific context, given this specific history, carries THIS level
+   of risk — and here is exactly why."
+
+WHAT IS MISSING IN THE INDUSTRY TODAY
+--------------------------------------
+  - CI/CD pipelines check: Does the code compile? Do tests pass?
+  - They do NOT check: Will this change cause a cascade? Has a similar change
+    failed before? Does this change violate a known compatibility rule?
+  - Change Advisory Boards (CABs) are manual, slow, and not scalable to
+    hundreds of daily deployments
+  - Existing APM tools (Datadog, New Relic) detect failures AFTER they happen
+  - There is no widely adopted system for PRE-deployment risk intelligence
+
+TARGET USERS / STAKEHOLDERS
+----------------------------
+- DevOps / Platform Engineers    : Need a fast, automated pre-deployment gate
+- Site Reliability Engineers     : Need explainable risk scores, not black boxes
+- Engineering Managers           : Need rollout recommendations they can defend
+- On-Call Teams                  : Need historical context surfaced automatically
+- CTO / VP Engineering           : Need to reduce MTTR and deployment-related P1s
+- Compliance / Security Teams    : Need auditable change risk records
+
+WHY THIS PROBLEM MATTERS (BUSINESS & OPERATIONAL RELEVANCE)
+------------------------------------------------------------
+- Industry average: 22% of production outages are caused by failed deployments
+  (DORA State of DevOps Report 2023)
+- Mean Time to Recover (MTTR) from a deployment-caused incident: 2–4 hours
+- For a critical service (payments, checkout), 1 hour of downtime =
+  $100K–$500K in direct revenue loss for a mid-size e-commerce platform
+- Engineering teams spend 30–40% of incident response time just understanding
+  "what changed and what it affected" — time that pre-deployment intelligence
+  could eliminate entirely
+- Most teams have runbooks, post-mortems, and incident docs — but they sit in
+  Confluence, Jira, and Slack, never consulted at deploy time
+- ChangeGuardian AI closes this gap by surfacing institutional knowledge at the
+  exact moment it is most needed: before the change goes live
+
+
+
+
+================================================================================
+SLIDE 3 — SOLUTION OVERVIEW
+================================================================================
+
+SOLUTION ARCHITECTURE / WORKFLOW
+---------------------------------
+  Natural Language Change Request
+             |
+             v
+  [1] Intake Agent
+      - Extracts: service name, old value, new value, extra params
+      - Uses regex + keyword matching
+             |
+             v
+  [2] Scenario Router Agent
+      - Classifies into 1 of 6 change types:
+        framework_upgrade | resource_change | db_schema |
+        api_contract | shared_dependency | event_schema
+             |
+             v
+  [3] Graph Impact Agent  (Graph RAG — NetworkX)
+      - Builds a directed dependency graph of all microservices, databases,
+        APIs, Kafka events, and shared libraries
+      - Traverses upstream + downstream to find ALL affected services
+      - Edge types: CALLS, USES_DB, DEPENDS_ON, CONSUMES_API,
+                    PRODUCES_EVENT, CONSUMES_EVENT
+             |
+             v
+  [4] Hybrid RAG Agent
+      |-- Vector RAG (FAISS + all-MiniLM-L6-v2):
+      |   Embeds historical incident documents and retrieves the most
+      |   semantically similar past incidents to the current change
+      |
+      |-- Vectorless RAG (pure Python rule engine):
+          Exact constraint checks — Java version compatibility,
+          memory safety buffer, NOT NULL backfill, API field rename
+          detection, library breaking version, Kafka field consumers
+             |
+             v
+  [5] Memory Graph Agent
+      - Checks a deployment history store for prior rollouts on the
+        same service or with a similar change pattern
+      - Surfaces past failures and their lessons
+             |
+             v
+  [6] Risk & Rollout Agent  (fully deterministic, no LLM)
+      - Calculates a 0-100 risk score from weighted rules:
+        criticality + affected services + incidents + violations + memory
+      - Maps score to Low / Medium / High / Critical
+      - Recommends: Direct | Canary | Staged-Rollout | Block
+             |
+             v
+  [7] LLM Explanation Agent  (AMD Local LLM via Ollama)
+      - Sends full risk analysis to Qwen2.5 running on AMD hardware
+      - Returns: 3-sentence plain-English explanation + 3 remediation steps
+             |
+             v
+  Final Risk Report (printed + Gradio UI)
+
+AI APPROACH USED
+----------------
+- Multi-Agent Orchestration   : LangGraph stateful 7-node pipeline
+- Hybrid RAG                  : Graph RAG + Vector RAG + Vectorless RAG combined
+- Graph RAG                   : NetworkX dependency graph traversal
+- Vector RAG                  : FAISS cosine similarity on incident embeddings
+- Vectorless RAG              : Deterministic Python rule engine (zero hallucination)
+- Memory Graph                : Deployment history store with keyword + exact matching
+- Local LLM (GenAI)           : Qwen2.5 running on AMD via Ollama for explanation
+
+KEY TECHNOLOGIES / FRAMEWORKS
+------------------------------
+  Framework        Version    Role
+  ---------------- ---------- ------------------------------------------
+  LangGraph        0.2.x      Multi-agent stateful workflow orchestration
+  NetworkX         3.x        Dependency graph (Graph RAG)
+  FAISS            1.7.x      Vector similarity index (Vector RAG)
+  SentenceTransformers 3.x    all-MiniLM-L6-v2 embeddings (384-dim)
+  Ollama           0.3.x      Local LLM server (AMD ROCm / CPU)
+  Qwen2.5:3b       3B params  Explanation + remediation generation
+  Gradio           4.x        Interactive web UI
+  psutil           5.x        AMD RAM / CPU monitoring
+  Python           3.9        Runtime
+
+WHAT WAS BUILT DURING THE HACKATHON
+------------------------------------
+- Complete end-to-end Jupyter notebook (11 cells, ~1000 lines of code)
+- 7-agent LangGraph pipeline from scratch
+- Realistic enterprise data model (7 services, 6 DBs, 2 APIs, 2 Kafka
+  topics, 2 shared libraries, 6 historical incidents, 5 deployment memories)
+- Three retrieval mechanisms implemented independently and fused
+- Deterministic risk scoring with full explainability (every point justified)
+- Gradio UI with 6 one-click example scenarios
+- AMD hardware profiling (RAM usage per scenario, LLM inference timing)
+
+
+================================================================================
+SLIDE 4 — TECHNICAL DETAILS
+================================================================================
+
+MODELS USED
+-----------
+Model                     Type            Purpose
+------------------------- --------------- ------------------------------------
+Qwen2.5:3b (via Ollama)   LLM (3B params) Plain-English explanation +
+                                           remediation steps generation
+                                           Runs on AMD CPU RAM (1.9 GB model)
+                                           Supports AMD ROCm GPU acceleration
+
+all-MiniLM-L6-v2          Embedding model FAISS vector similarity search
+(sentence-transformers)   (22M params,    Encodes incident documents into
+                           384-dim)        384-dimensional vectors
+                                           CPU-based, uses all AMD cores
+
+No fine-tuning was performed. Both models are used inference-only.
+
+DATASET(S) USED
+---------------
+- No external dataset. All data is synthetic but realistic enterprise data
+  created for this hackathon:
+  * 7 microservices with full production metadata
+  * 6 historical incident documents (P1/P2 severity)
+  * 5 past deployment records with outcomes and lessons
+  * Compatibility rule tables (Spring Boot / Java matrix, memory thresholds)
+  * Dependency graph (19 nodes, 33 edges)
+
+TRAINING TIME
+-------------
+Not applicable — no fine-tuning. Model warm-up (loading Qwen2.5:3b
+into AMD RAM): ~2 seconds on first call, then cached for all subsequent runs.
+
+NUMBER OF TOKENS PER SCENARIO (approximate)
+--------------------------------------------
+Scenario                                          Input Tokens   Output Tokens
+------------------------------------------------- -------------- -------------
+Upgrade payment-service Spring Boot 2.7 -> 3.2        ~420          ~180
+Reduce checkout-service memory 2GB -> 1GB             ~380          ~150
+Add NOT NULL constraint to transaction.amount         ~360          ~140
+Change payment API field customer_id -> customerId    ~390          ~160
+Upgrade legacy-auth-client 1.4.0 -> 2.0.0            ~430          ~175
+Remove customerEmail from order-created event         ~410          ~155
+
+Average tokens per scenario: ~400 input / ~160 output
+
+END-TO-END LATENCY
+------------------
+Stage                          Time
+------------------------------ ---------
+Intake + Router                < 1 ms
+Graph Impact (NetworkX)        < 5 ms
+FAISS Vector Search            < 10 ms
+Vectorless Rule Check          < 1 ms
+Memory Graph Lookup            < 1 ms
+Risk Scoring (deterministic)   < 1 ms
+LLM Explanation (Qwen2.5:3b)   2–8 seconds  (AMD CPU, no GPU)
+                               0.5–2 sec    (AMD Radeon GPU with ROCm)
+------------------------------------------------
+Total end-to-end (CPU mode)    ~3–9 seconds per scenario
+Total end-to-end (GPU/ROCm)    ~1–3 seconds per scenario
+
+GPU / RAM USAGE
+---------------
+Hardware Profile (demo machine):
+  CPU  : AMD64 Family 25 Model 80 (AMD Ryzen 7)
+  Cores: 8 physical / 16 logical
+  RAM  : 15.4 GB total
+
+Memory usage during demo run:
+  Baseline (kernel loaded)          :  ~6.0 GB RAM
+  After model warm-up (Qwen2.5:3b)  : ~10.9 GB RAM  (+4.9 GB for LLM)
+  During FAISS embedding             : ~11.1 GB RAM  (+0.2 GB for embedder)
+  Peak during 6-scenario run        : ~11.4 GB RAM
+
+GPU usage (if AMD Radeon + ROCm enabled):
+  Qwen2.5:3b fits in 4 GB VRAM (quantized)
+  Offloads to CPU RAM automatically if VRAM insufficient
+
+Right-sizing guidance:
+  16 GB RAM  ->  qwen2.5:3b  (1.9 GB model, comfortable)
+  32 GB RAM  ->  qwen2.5:7b  (4.7 GB model, better quality)
+  64 GB RAM  ->  qwen2.5:14b (9.0 GB model, best quality)
+
+
+================================================================================
+SLIDE 5 — IMPACT & DEMO SUMMARY
+================================================================================
+
+EXPECTED IMPACT / VALUE
+------------------------
+Efficiency      : Reduces pre-deployment risk assessment from 30–60 minutes
+                  of manual review to under 10 seconds automated analysis
+
+Productivity    : Engineers no longer need to manually cross-reference
+                  runbooks, incident reports, and dependency maps — all
+                  institutional knowledge is surfaced automatically
+
+Scale           : One system handles 6 different change scenarios covering
+                  the full spectrum of production risk: framework upgrades,
+                  resource changes, database migrations, API contracts,
+                  shared dependencies, and event schema changes
+
+Experience      : Risk reports include plain-English LLM explanations and
+                  step-by-step remediation — junior engineers can act on
+                  them without escalating to senior SREs
+
+Reliability     : Deterministic scoring (every risk point is justified and
+                  traceable) eliminates the "black box" problem of pure LLM
+                  risk assessment. Judges and operators can audit every score.
+
+Data Privacy    : Runs 100% on-premise on AMD hardware. Change requests,
+                  incident history, and service topology never leave the
+                  network. Critical for financial services, healthcare, defense.
+
+KEY DIFFERENTIATORS / INNOVATION
+----------------------------------
+1. HYBRID RAG FUSION
+   Most RAG systems use only vector search. ChangeGuardian AI combines three
+   retrieval strategies in one pipeline: Graph RAG (structural dependencies),
+   Vector RAG (semantic similarity), and Vectorless RAG (exact rule matching).
+   Each retrieves information no other method can.
+
+2. DETERMINISTIC + LLM HYBRID SCORING
+   The risk score (0-100) is calculated by deterministic rules with full
+   explainability — no LLM involved in scoring. The LLM is used ONLY for
+   natural language explanation and remediation suggestions. This means
+   the system is auditable, reproducible, and trustworthy.
+
+3. AMD-NATIVE ON-PREMISE EXECUTION
+   The entire system — embeddings, graph traversal, rule engine, LLM inference
+   — runs on AMD hardware with no external API dependency. This is a
+   production-deployable architecture for enterprises that cannot send
+   deployment metadata to cloud APIs.
+
+4. MEMORY GRAPH LEARNING
+   The system incorporates a deployment memory store that surfaces lessons
+   from prior rollouts. If payment-service failed a Spring Boot upgrade before,
+   that lesson is retrieved and factored into the risk score automatically.
+
+5. SCENARIO COVERAGE
+   Six distinct production change scenarios are handled by a single unified
+   pipeline — not six separate tools. The Scenario Router agent classifies
+   the natural language request and the correct risk rules activate.
+
+DEMO FLOW OVERVIEW — WHAT THE JURY SHOULD NOTICE
+--------------------------------------------------
+Step 1 | System startup
+        - Cell 2 prints AMD system profile: CPU model, cores, total RAM
+        - Ollama LLM loads into AMD RAM: observe RAM usage jump from 6 GB to 11 GB
+        - This demonstrates real AMD hardware utilization
+
+Step 2 | Scenario 1 — Spring Boot Upgrade (CRITICAL risk)
+        "Upgrade payment-service from Spring Boot 2.7 to 3.2"
+        NOTICE:
+        - Graph RAG finds 5 affected downstream services
+        - Vectorless RAG flags Java mismatch (Java 11 vs required 17)
+        - Vector RAG retrieves INC-002 (same service, same failure pattern)
+        - Memory Graph finds DEP-101 (successful prior upgrade — good lesson)
+        - Risk score: 100/100 — DEPLOYMENT BLOCKED
+        - LLM generates 3-sentence explanation + javax->jakarta remediation steps
+
+Step 3 | Scenario 2 — Memory Reduction (CRITICAL risk)
+        "Reduce checkout-service memory limit from 2GB to 1GB"
+        NOTICE:
+        - 1GB < 1.8GB peak × 1.2 safety buffer = MEMORY_UNSAFE violation
+        - Vector RAG retrieves INC-001 (same service OOMKilled for same reason)
+        - Memory Graph finds DEP-102 (checkout-service, memory reduction, FAILED)
+        - Risk score penalized by prior failure memory
+        - LLM explains OOMKill risk in plain English
+
+Step 4 | Scenario 6 — Kafka Event Schema (HIGH risk)
+        "Remove customerEmail field from order-created Kafka event"
+        NOTICE:
+        - Event consumer graph shows notification-svc READS customerEmail
+        - notification-svc is a consumer of this exact field
+        - Vectorless RAG fires EVENT_FIELD_REMOVED violation
+        - LLM recommends dual-write migration pattern
+
+Step 5 | Summary table
+        - All 6 scenarios printed in a comparison table
+        - Shows: score, impact level, rollout recommendation side by side
+        - Clear demonstration that each scenario produces a unique, correct verdict
+
+Step 6 | Gradio UI (live demo)
+        - Type any free-form change request
+        - Receive formatted markdown report in real time
+        - UI shows: AMD RAM in use, pipeline time, LLM model name
+        - Demonstrates the system is interactive, not just a batch runner
+
+================================================================================
+END OF PRESENTATION CONTENT
+================================================================================

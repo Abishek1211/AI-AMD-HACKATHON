@@ -1,0 +1,95 @@
+Describe your production change,Risk Analysis Report,flag,username,timestamp
+Upgrade paymentService from springboot from 2.7 to 3.5,"## ðŸ”´ ChangeGuardian AI â€” Risk Report
+
+| | |
+|---|---|
+| **Change** | Upgrade paymentService from springboot from 2.7 to 3.5 |
+| **Scenario** | `FRAMEWORK UPGRADE` |
+| **Service** | `unknown` |
+| **Risk Score** | **100 / 100** |
+| **Impact** | ðŸ”´ **CRITICAL** |
+| **Rollout** | DEPLOYMENT BLOCKED â€” Resolve all violations before proceeding. |
+| **Pipeline time** | 2.1s \| AMD RAM in use: 11.3/15.4 GB |
+
+---
+
+### ðŸ“¡ Affected Services
+_None_
+
+### âš ï¸ Rule Violations (Vectorless RAG)
+- `JAVA_MISMATCH: Spring Boot 3.5 requires Java >=17, unknown has Java 8`
+- `BREAKING_CHANGE: javax -> jakarta namespace migration required`
+- `BREAKING_CHANGE: Removed deprecated Spring APIs`
+- `BREAKING_CHANGE: spring.factories auto-configuration format removed`
+
+### ðŸ”Ž Similar Past Incidents (Vector RAG â€” FAISS)
+- **[P1]** `INC-002`: Spring Boot 3 migration broke javax imports
+- **[P2]** `INC-004`: API field rename broke checkout
+- **[P1]** `INC-005`: legacy-auth-client 2.0 removed token refresh method
+
+### ðŸ§  Memory Graph
+- **SUCCESS** `DEP-101`: Ran full regression suite | Deployed on low-traffic Sunday
+
+### ðŸ’¡ Risk Score Breakdown
+- Base score (+10)
+- Service criticality=medium (+10)
+- Similar P1 incident: INC-002 (+20)
+- 4 rule violation(s) (+30)
+- Java mismatch: needs 17, has 8 (+20)
+- Spring Boot 3.x breaking migration (+15)
+
+---
+
+### ðŸ¤– LLM Explanation  *(Local qwen2.5:3b â€” AMD GPU/ROCm)*
+This framework upgrade change to unknown carries critical risk (score 100/100). 4 rule violation(s) were detected that must be resolved before deployment. A similar change previously caused: Spring Boot 3 migration broke javax imports.
+
+### ðŸ› ï¸ Remediation Steps
+1. Run javax->jakarta migration script on entire codebase
+2. Upgrade Java to 17+ on all pods before deploying
+3. Run full integration test suite against new Spring Boot version",,,2026-06-12 12:23:08.375648
+Upgrade legacy-auth-client from 1.4.0 to 2.0.0 across all services,"##  ChangeGuardian AI  Risk Report
+
+| | |
+|---|---|
+| **Change** | Upgrade legacy-auth-client from 1.4.0 to 2.0.0 across all services |
+| **Scenario** | `SHARED DEPENDENCY` |
+| **Service** | `legacy-auth-client` |
+| **Risk Score** | **100 / 100** |
+| **Impact** |  **CRITICAL** |
+| **Rollout** | DEPLOYMENT BLOCKED â€” Resolve all violations before proceeding. |
+| **Pipeline time** | 2.1s \| AMD RAM in use: 11.5/15.4 GB |
+
+---
+
+###  Affected Services
+`checkout-service`, `inventory-service`, `legacy-auth-svc`, `notification-svc`, `order-service`, `payment-service`, `user-service`
+
+###  Rule Violations (Vectorless RAG)
+- `BREAKING_LIB: legacy-auth-client 2.0.0 >= breaking version 2.0.0`
+- `BULK_RISK: 5 services use legacy-auth-client: ['payment-service', 'checkout-service', 'order-service', 'user-service', 'legacy-auth-svc']`
+
+###  Similar Past Incidents (Vector RAG  FAISS)
+- **[P1]** `INC-005`: legacy-auth-client 2.0 removed token refresh method
+- **[P2]** `INC-004`: API field rename broke checkout
+- **[P1]** `INC-002`: Spring Boot 3 migration broke javax imports
+
+###  Memory Graph
+- **SUCCESS** `DEP-105`: Minor version â€” no breaking changes | Tested in staging 1 week
+
+###  Risk Score Breakdown
+- Base score (+10)
+- Service criticality=medium (+10)
+- 7 affected service(s) (+25)
+- Similar P1 incident: INC-005 (+20)
+- 2 rule violation(s) (+30)
+- Major version break: legacy-auth-client 2.0.0 >= 2.0.0 (+25)
+
+---
+
+###  LLM Explanation  *(Local qwen2.5:3b ” AMD GPU/ROCm)*
+This shared dependency change to legacy-auth-client carries critical risk (score 100/100). 2 rule violation(s) were detected that must be resolved before deployment. A similar change previously caused: legacy-auth-client 2.0 removed token refresh method.
+
+###  Remediation Steps
+1. Review CHANGELOG for all breaking changes between old and new version
+2. Test upgrade in isolation for each consuming service
+3. Coordinate a single release window across all affected teams",,,2026-06-12 12:44:00.782431
